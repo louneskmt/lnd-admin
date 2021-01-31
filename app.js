@@ -40,6 +40,7 @@ var qrcode = require("qrcode");
 var rpcApi = require("./app/rpcApi.js");
 var runes = require("runes");
 var semver = require("semver");
+var hashjs = require('hash.js');
 
 const latestVersion = require('latest-version');
 
