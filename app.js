@@ -217,7 +217,7 @@ app.runOnStartup = function() {
 			if(process.env.LND_ADMIN_RPC_HOST && process.env.LND_ADMIN_RPC_PORT && process.env.LND_ADMIN_ADMIN_MACAROON_FILEPATH && process.env.LND_ADMIN_TLS_CERT_FILEPATH) {
 				var promises = [];
 
-				newLndNode = {
+				var newLndNode = {
 					type: "fileInput",
 					host: process.env.LND_ADMIN_RPC_HOST,
 					port: process.env.LND_ADMIN_RPC_PORT,
