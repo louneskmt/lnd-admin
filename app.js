@@ -200,8 +200,6 @@ app.runOnStartup = function() {
 
 		utils.saveAdminCredentials(global.adminPassword);
 		utils.savePreferences(global.userPreferences, global.adminPassword);
-
-		global.adminPassword = null;
 	}
 
 	if (fs.existsSync(path.join(global.userDataDir, "credentials.json"))) {
@@ -238,7 +236,9 @@ app.runOnStartup = function() {
 						rpcApi.connectAllNodes();
 					}).catch(function(err) {
 						global.setupNeeded = true;
-					});
+					}).finally(function() {
+						global.adminPassword = null;
+					})
 				}
 			} else if (global.adminCredentials.lndNodes == null || global.adminCredentials.lndNodes.length == 0) {
 				global.setupNeeded = true;
