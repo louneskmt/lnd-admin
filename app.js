@@ -200,6 +200,8 @@ app.runOnStartup = function() {
 
 		utils.saveAdminCredentials(global.adminPassword);
 		utils.savePreferences(global.userPreferences, global.adminPassword);
+
+		global.adminPassword = null;
 	}
 
 	if (fs.existsSync(path.join(global.userDataDir, "credentials.json"))) {
@@ -227,17 +229,17 @@ app.runOnStartup = function() {
 
 				if (global.adminCredentials.lndNodes == null) {
 					global.adminCredentials.lndNodes = [];
+
+					promises.push(rpcApi.connect(newLndNode, global.adminCredentials.lndNodes.length - 1));
+
+					Promise.all(promises.map(utils.reflectPromise)).then(function() {
+						global.adminCredentials.lndNodes.push(newLndNode);
+						utils.saveAdminCredentials(global.adminPassword);
+						rpcApi.connectAllNodes();
+					}).catch(function(err) {
+						global.setupNeeded = true;
+					});
 				}
-
-				promises.push(rpcApi.connect(newLndNode, global.adminCredentials.lndNodes.length - 1));
-
-				Promise.all(promises.map(utils.reflectPromise)).then(function() {
-					global.adminCredentials.lndNodes.push(newLndNode);
-					utils.saveAdminCredentials(global.adminPassword);
-					rpcApi.connectAllNodes();
-				}).catch(function(err) {
-					global.setupNeeded = true;
-				});
 			} else if (global.adminCredentials.lndNodes == null || global.adminCredentials.lndNodes.length == 0) {
 				global.setupNeeded = true;
 			} else {
@@ -247,6 +249,8 @@ app.runOnStartup = function() {
 	} else {
 		global.setupNeeded = true;
 	}
+
+
 };
 
 
