@@ -187,6 +187,20 @@ app.runOnStartup = function() {
 
 	global.userPreferences = {};
 
+	if (!fs.existsSync(path.join(global.userDataDir, "credentials.json") && process.env.LND_ADMIN_LOGIN_PASSWORD)) {
+		var pwd = process.env.LND_ADMIN_LOGIN_PASSWORD;
+
+		global.adminPassword = pwd;
+
+		var pwdSha256 = hashjs.sha256().update(pwd).digest('hex');
+
+		global.adminCredentials = {};
+		global.adminCredentials.adminPasswordSha256 = pwdSha256;
+
+		utils.saveAdminCredentials(global.adminPassword);
+		utils.savePreferences(global.userPreferences, global.adminPassword);
+	}
+
 	if (fs.existsSync(path.join(global.userDataDir, "credentials.json"))) {
 		if (fs.existsSync(path.join(global.userDataDir, ".debugAdminPassword"))) {
 			global.adminPassword = fs.readFileSync(path.join(global.userDataDir, ".debugAdminPassword"), "utf8").trim();
@@ -199,9 +213,31 @@ app.runOnStartup = function() {
 				global.userPreferences = utils.loadPreferences(global.adminPassword);
 			}
 
-			if (global.adminCredentials.lndNodes == null || global.adminCredentials.lndNodes.length == 0) {
-				global.setupNeeded = true;
+			if(process.env.LND_ADMIN_RPC_HOST && process.env.LND_ADMIN_RPC_PORT && process.env.LND_ADMIN_ADMIN_MACAROON_FILEPATH && process.env.LND_ADMIN_TLS_CERT_FILEPATH) {
+				var promises = [];
 
+				newLndNode = {
+					type: "fileInput",
+					host: process.env.LND_ADMIN_RPC_HOST,
+					port: process.env.LND_ADMIN_RPC_PORT,
+					adminMacaroonFilepath: process.env.LND_ADMIN_ADMIN_MACAROON_FILEPATH,
+					tlsCertFilepath: process.env.LND_ADMIN_TLS_CERT_FILEPATH
+				};
+
+				if (global.adminCredentials.lndNodes == null) {
+					global.adminCredentials.lndNodes = [];
+				}
+
+				promises.push(rpcApi.connect(newLndNode, global.adminCredentials.lndNodes.length - 1));
+
+				Promise.all(promises.map(utils.reflectPromise)).then(function() {
+					global.adminCredentials.lndNodes.push(newLndNode);
+					utils.saveAdminCredentials(global.adminPassword);
+				}).catch(function(err) {
+					global.setupNeeded = true;
+				});
+			} else if (global.adminCredentials.lndNodes == null || global.adminCredentials.lndNodes.length == 0) {
+				global.setupNeeded = true;
 			} else {
 				rpcApi.connectAllNodes();
 			}
