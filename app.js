@@ -234,6 +234,7 @@ app.runOnStartup = function() {
 				Promise.all(promises.map(utils.reflectPromise)).then(function() {
 					global.adminCredentials.lndNodes.push(newLndNode);
 					utils.saveAdminCredentials(global.adminPassword);
+					rpcApi.connectAllNodes();
 				}).catch(function(err) {
 					global.setupNeeded = true;
 				});
